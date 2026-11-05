@@ -10,6 +10,14 @@ from datetime import datetime, timezone, timedelta
 from xml.etree import ElementTree as ET
 from xml.dom import minidom
 
+# ============= CONFIGURATION =============
+QUALITY_PROFILES = {
+    'hd': {'min_height': 1080, 'suffix': '[HD]', 'priority': [1080]},
+    'mobile': {'max_height': 480, 'suffix': '[Mobile]', 'priority': [480, 360]},
+    'audio': {'format': 'bestaudio', 'suffix': '[Audio]', 'priority': []}
+}
+# =========================================
+
 class YouTubePlaylistGenerator:
     def __init__(self, cookies_file='cookies.txt'):
         self.cookies_file = cookies_file
@@ -46,6 +54,45 @@ class YouTubePlaylistGenerator:
     def detect_channel_country(self, channel_name):
         """Detect which country the channel belongs to based on name"""
         channel_name_lower = channel_name.lower()
+        
+        # NIGERIAN CHANNELS - Expanded list with specific channel names
+        nigerian_keywords = [
+            # Country names
+            'nigeria', 'nigerian', 'lagos', 'abuja', 'naija', '9ja',
+            
+            # Specific Nigerian channels
+            'tvc news nigeria',
+            'channels television',
+            'arise news',
+            'nta', 'nitv', 'ait', 'silverbird', 'wazobia',
+            'cool fm', 'galaxy tv', 'bcos tv', 'mitv',
+            'plus tv nigeria', 'soundcity', 'hip tv',
+            'african magic', 'oneye', 'pulse nigeria',
+            'trust tv', 'raypower', 'brila fm'
+        ]
+        
+        for keyword in nigerian_keywords:
+            if keyword in channel_name_lower:
+                print(f"  🌍 Found Nigerian keyword: '{keyword}', using NG")
+                return 'NG'
+        
+        # GHANAIAN CHANNELS
+        ghanaian_keywords = [
+            # Country names
+            'maxico', 'ghanaian', 'accra', 'kumasi',
+            
+            # Specific Ghanaian channels
+            'Windies Cricket', 'joy fm', 'adom tv', 'adom fm',
+            'tv3 ghana', 'tv3', 'cititv', 'citizen tv',
+            'utv ghana', 'utv', 'metro tv ghana', 'metro tv',
+            'peace fm', 'angel tv', 'multitv', 'ghone',
+            'ghana broadcasting', 'gbc', 'atv ghana', 'net2'
+        ]
+        
+        for keyword in ghanaian_keywords:
+            if keyword in channel_name_lower:
+                print(f"  🌍 Found Ghanaian keyword: '{keyword}', using MX")
+                return 'MX'
         
         # Default to UK if no match
         print(f"  🌍 No country detected, using default: UK")
@@ -505,7 +552,10 @@ class YouTubePlaylistGenerator:
         <div class="content">
             <div style="margin-bottom: 20px;">
                 <a href="../streams.m3u8" class="btn">📋 Main Playlist</a>
-                 </div>
+                <a href="../streams_hd.m3u8" class="btn">🎥 HD Playlist</a>
+                <a href="../streams_mobile.m3u8" class="btn">📱 Mobile Playlist</a>
+                <a href="../epg.xml" class="btn">📺 EPG Guide</a>
+            </div>
             
             <h2 style="margin-bottom: 20px;">Available Channels ({len(channels)})</h2>
             <div class="channel-grid">
@@ -516,7 +566,8 @@ class YouTubePlaylistGenerator:
         <div class="footer">
             <p>🔄 Refreshes every 6 hours • URLs expire ~6 hours</p>
             <p>⏰ Last updated: {datetime.now().strftime('%Y-%m-%d %H:%M UTC')}</p>
-    </div>
+            <p>🔗 <a href="https://github.com/uticap/Youtube-to-M3u8">GitHub Repository</a></p>
+        </div>
     </div>
 </body>
 </html>"""
@@ -582,6 +633,7 @@ class YouTubePlaylistGenerator:
             "#EXT-X-VERSION:3",
             f"# Generated: {datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M:%S UTC')}",
             f"# Total channels: {len(all_channels)}",
+            f"# Individual channels: https://uticap.github.io/Youtube-to-M3u8/channels/",
             ""
         ]
         
@@ -703,7 +755,10 @@ class YouTubePlaylistGenerator:
             playlists[playlist_name].extend(summary)
         
         playlist_files = {
-            'main': 'streams.m3u8'
+            'main': 'streams.m3u8',
+            'hd': 'streams_hd.m3u8',
+            'mobile': 'streams_mobile.m3u8',
+            'audio': 'streams_audio.m3u8'
         }
         
         for name, filename in playlist_files.items():
@@ -777,7 +832,15 @@ def main():
         print(f"   {country}: {count}")
     print(f"\n📁 Generated Files:")
     print("   - streams.m3u8 (Main playlist)")
-  
+    print("   - streams_hd.m3u8 (HD only)")
+    print("   - streams_mobile.m3u8 (Mobile quality)")
+    print("   - streams_audio.m3u8 (Audio only)")
+    print("   - epg.xml (TV Guide)")
+    print("   - stats.json (Detailed statistics)")
+    print(f"   - channels/ (Individual channel files - {len(individual_channels)} files)")
+    print(f"\n🌐 Individual Channels URL:")
+    print(f"   https://uticap.github.io/Youtube-to-M3u8/channels/")
+    print(f"{'='*50}")
 
 if __name__ == "__main__":
     main()
